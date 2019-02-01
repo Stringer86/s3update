@@ -31,6 +31,8 @@ type Updater struct {
 	S3ReleaseKey string
 	// S3VersionKey represents the key on S3 to download the current version
 	S3VersionKey string
+	// PostUpdateHandler represents the function to be passed that is to be run after pulling the app
+	PostUpdateHandler func(dest string)
 }
 
 // validate ensures every required fields is correctly set. Otherwise and error is returned.
@@ -149,6 +151,11 @@ func runAutoUpdate(u Updater) error {
 
 		// Removing backup
 		os.Remove(destBackup)
+
+		// Run the PostUpdateHandler handler
+		if u.PostUpdateHandler != nil {
+			u.PostUpdateHandler(dest)
+		}
 
 		fmt.Printf("s3update: updated with success to version %d\nRestarting application\n", remoteVersion)
 
