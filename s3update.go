@@ -23,6 +23,8 @@ type Updater struct {
 	S3ReleaseUrl string
 
 	S3VersionUrl string
+	// PostUpdateHandler represents the function to be passed that is to be run after pulling the app
+	PostUpdateHandler func(dest string) error
 }
 
 // validate ensures every required fields is correctly set. Otherwise and error is returned.
@@ -130,6 +132,16 @@ func runAutoUpdate(u Updater) error {
 		if err := ioutil.WriteFile(dest, data, 0755); err != nil {
 			os.Rename(destBackup, dest)
 			return err
+		}
+
+		// Run the PostUpdateHandler handler
+		if u.PostUpdateHandler != nil {
+			fmt.Printf("s3update: updating using post handler\n")
+			if err := u.PostUpdateHandler(dest); err != nil {
+				fmt.Printf("s3update: error updating using post handler :: %s\n", err)
+				os.Rename(destBackup, dest)
+				return err
+			}
 		}
 
 		// Removing backup
